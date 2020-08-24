@@ -37,4 +37,10 @@ public class UserServiceImpl implements UserService {
         return this.userRepository.findById(id);
     }
 
+    @Override
+    public void delete(User user) {
+        // Excluindo usuário que foi passado como parâmetro
+
+    }
+
 }

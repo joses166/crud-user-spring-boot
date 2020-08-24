@@ -68,4 +68,22 @@ public class UserController {
         return ResponseEntity.ok().body(response);
     }
 
+    @DeleteMapping("{id}")
+    public ResponseEntity<Response<UserDTO>> delete(@PathVariable("id") Long id) {
+        // Log informado o que o método executa
+        log.info("Na rota utilizada será feito um método DELETE passando o ID como parâmetro para excluir um usuário.");
+        // Variável instanciada de resposta
+        Response<UserDTO> response = new Response<>();
+        // Pesquisa do usuário pelo id
+        User user = this.userService.getUserById( id ).orElse(null);
+        // Caso não encontre o usuário entrará no if retornando erro de not found
+        if ( user == null ) {
+            return ResponseEntity.notFound().build();
+        }
+        // Removendo o usuário
+        this.userService.delete(user);
+        // Retornando status de aceito
+        return ResponseEntity.accepted().build();
+    }
+
 }

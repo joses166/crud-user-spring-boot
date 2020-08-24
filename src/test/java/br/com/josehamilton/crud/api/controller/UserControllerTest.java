@@ -148,4 +148,31 @@ public class UserControllerTest {
         ;
     }
 
+    @Test
+    @DisplayName("Deve ser removido um usuário a partir do id.")
+    public void deleteUserByIdTest() throws Exception {
+        // Cenário
+        Long id = 1l;
+        User user = User.builder().id(1l).fullname("Fulano").email("fulano@email.com").cpf("54737491004").build();
+        BDDMockito.given( userService.getUserById(id) ).willReturn( Optional.of(user) );
+        // Execução
+        MockHttpServletRequestBuilder request = MockMvcRequestBuilders.delete(USER_API.concat("/" + id)).accept(MediaType.APPLICATION_JSON);
+        // Verificações
+        mvc.perform( request )
+            .andExpect( status().isAccepted() );
+    }
+
+    @Test
+    @DisplayName("Deve retornar erro not found ao tentar remover usuário inexistente.")
+    public void deleteInexistentUserTest() throws Exception {
+        // Cenário
+        Long id = 1l;
+        BDDMockito.given( userService.getUserById(id) ).willReturn( Optional.empty() );
+        // Execução
+        MockHttpServletRequestBuilder request = MockMvcRequestBuilders.delete(USER_API.concat("/" + id)).accept(MediaType.APPLICATION_JSON);
+        // Verificações
+        mvc.perform( request )
+                .andExpect( status().isNotFound() );
+    }
+
 }
