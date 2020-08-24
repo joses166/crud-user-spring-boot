@@ -39,8 +39,22 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void delete(User user) {
+        // Verifica se o usuário existe
+        if (user == null || user.getId() == null) {
+            throw new BusinessException("Usuário que está tentando ser removido não existe.");
+        }
         // Excluindo usuário que foi passado como parâmetro
+        this.userRepository.delete(user);
+    }
 
+    @Override
+    public User update(User user) {
+        // Verifica se o usuário existe
+        if (user == null || user.getId() == null) {
+            throw new BusinessException("Usuário que está tentando ser alterado não existe.");
+        }
+        // Alterando usuário que foi passado como parâmetro
+        return this.userRepository.save( user );
     }
 
 }

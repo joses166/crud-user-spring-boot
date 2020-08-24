@@ -5,7 +5,6 @@ import br.com.josehamilton.crud.api.dtos.UserDTO;
 import br.com.josehamilton.crud.api.entity.User;
 import br.com.josehamilton.crud.api.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -173,6 +172,53 @@ public class UserControllerTest {
         // Verificações
         mvc.perform( request )
                 .andExpect( status().isNotFound() );
+    }
+
+    @Test
+    @DisplayName("Deve alterar um usuário.")
+    public void updateUserTest() throws Exception {
+        // Cenário
+        Long id = 1l;
+        User updatingUser = User.builder().id(1l).fullname("Fulano").email("fulano@email.com").cpf("54737491004").build();
+        User updatedUser = User.builder().id(1l).fullname("Fulano alterado").email("fulanoalterado@email.com").cpf("54737491004").build();
+        String json = new ObjectMapper().writeValueAsString( updatedUser );
+        BDDMockito.given( this.userService.getUserById(id) ).willReturn( Optional.of(updatingUser) );
+        BDDMockito.given( this.userService.update(updatingUser) ).willReturn(updatedUser);
+        // Execuções
+        MockHttpServletRequestBuilder request = MockMvcRequestBuilders
+                .put(USER_API.concat("/" + id))
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json);
+        // Verificações
+        mvc.perform(request)
+                .andExpect( status().isOk() )
+                .andExpect( jsonPath("data.id").value( updatedUser.getId() ) )
+                .andExpect( jsonPath("data.fullname").value( updatedUser.getFullname() ) )
+                .andExpect( jsonPath("data.email").value( updatedUser.getEmail() ) )
+                .andExpect( jsonPath("data.cpf").value( updatedUser.getCpf() ) )
+        ;
+    }
+
+    @Test
+    @DisplayName("Deve alterar um usuário.")
+    public void updateInexistentUserTest() throws Exception {
+        // Cenário
+        Long id = 1l;
+        User updatedUser = User.builder().id(1l).fullname("Fulano alterado").email("fulanoalterado@email.com").cpf("54737491004").build();
+        String json = new ObjectMapper().writeValueAsString( updatedUser );
+        BDDMockito.given( this.userService.getUserById(id) ).willReturn( Optional.empty() );
+        // Execuções
+        MockHttpServletRequestBuilder request = MockMvcRequestBuilders
+                .put(USER_API.concat("/" + id))
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json);
+        // Verificações
+        mvc
+            .perform(request)
+            .andExpect( status().isNotFound() )
+        ;
     }
 
 }

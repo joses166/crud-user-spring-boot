@@ -1,7 +1,6 @@
 package br.com.josehamilton.crud.api.repository;
 
 import br.com.josehamilton.crud.api.entity.User;
-import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -86,6 +85,19 @@ public class UserRepositoryTest {
         Optional<User> result = this.userRepository.findById(id);
         // Verificações
         assertThat( result.isPresent() ).isFalse();
+    }
+
+    @Test
+    @DisplayName("Deve remover um usuário.")
+    public void deleteAnUserTest() {
+        // Cenário
+        User userSaved = this.createAndPersistUser();
+        User foundBook = this.entityManager.find(User.class, userSaved.getId());
+        // Execução
+        this.userRepository.delete(foundBook);
+        // Verificações
+        User deletedUser = this.entityManager.find(User.class, userSaved.getId());
+        assertThat( deletedUser ).isNull();
     }
 
     public User createAndPersistUser() {

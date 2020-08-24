@@ -133,4 +133,60 @@ public class UserServiceTest {
         assertThat( result.isPresent() ).isFalse();
     }
 
+    @Test
+    @DisplayName("Deve ser feita a remoção do usuário.")
+    public void deleteAnUserTest() {
+        // Cenário
+        Long id = 1l;
+        User user = User.builder()
+                .id(id)
+                .fullname("Fulano")
+                .email("fulano@email.com")
+                .cpf("54737491004")
+                .build();
+        // Execução
+        org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> this.userService.delete(user));
+        // Verificação
+        Mockito.verify(userRepository, Mockito.times(1)).delete(user);
+    }
+
+    @Test
+    @DisplayName("Deve ser feita a remoção do usuário.")
+    public void deleteAnInexistentUserTest() {
+        // Cenário
+        User user = null;
+        // Execução
+        org.junit.jupiter.api.Assertions.assertThrows(BusinessException.class, () -> this.userService.delete(user));
+        // Verificação
+        Mockito.verify(userRepository, Mockito.never()).delete(user);
+    }
+
+    @Test
+    @DisplayName("Deve alterar um usuário.")
+    public void updateAnUserTest() {
+        // Cenário
+        Long id = 1l;
+        User user = User.builder().id(1l).build();
+        User userUpdated = User.builder().id(id).fullname("Fulano").email("email@email.com").cpf("12345678900").build();
+        Mockito.when( this.userRepository.save( user ) ).thenReturn( userUpdated );
+        // Execução
+        User result = this.userService.update( user );
+        // Verificações
+        assertThat( result.getId() ).isEqualTo( id );
+        assertThat( result.getFullname() ).isEqualTo( userUpdated.getFullname() );
+        assertThat( result.getEmail() ).isEqualTo( userUpdated.getEmail() );
+        assertThat( result.getCpf() ).isEqualTo( userUpdated.getCpf() );
+    }
+
+    @Test
+    @DisplayName("Deve dar erro ao tentar alterar um usuário.")
+    public void updateAnInexistentUserTest() {
+        // Cenário
+        User user = null;
+        // Execução
+        org.junit.jupiter.api.Assertions.assertThrows(BusinessException.class, () -> this.userService.update( user ));
+        // Verificações
+        Mockito.verify( this.userRepository, Mockito.never() ).save( user );
+    }
+
 }
