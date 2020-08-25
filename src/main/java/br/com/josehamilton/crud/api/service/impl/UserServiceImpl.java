@@ -4,6 +4,10 @@ import br.com.josehamilton.crud.api.entity.User;
 import br.com.josehamilton.crud.api.exception.BusinessException;
 import br.com.josehamilton.crud.api.repository.UserRepository;
 import br.com.josehamilton.crud.api.service.UserService;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -55,6 +59,21 @@ public class UserServiceImpl implements UserService {
         }
         // Alterando usuário que foi passado como parâmetro
         return this.userRepository.save( user );
+    }
+
+    @Override
+    public Page<User> find(User filter, Pageable pageRequest) {
+        // Configurando parâmetros dentro de classe Example
+        Example<User> example = Example.of(
+                filter,
+                ExampleMatcher
+                        .matching()
+                        .withIgnoreCase()
+                        .withIgnoreNullValues()
+                        .withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING)
+        );
+        // Faz busca com parâmetros e paginação
+        return this.userRepository.findAll(example, pageRequest);
     }
 
 }

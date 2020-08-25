@@ -14,6 +14,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -21,11 +24,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import static org.hamcrest.Matchers.hasSize;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ExtendWith(SpringExtension.class)
 @ActiveProfiles("test")
@@ -45,7 +49,7 @@ public class UserControllerTest {
     @DisplayName("Deve salvar um novo usuário.")
     public void createUserTest() throws Exception {
         // Cenário
-        UserDTO userDTO = UserDTO.builder().fullname("Fulano").email("fulano@email.com").cpf("54737491004").build();
+        UserDTO userDTO = createAnUserDTO();
         String json = new ObjectMapper().writeValueAsString(userDTO);
 
         User user = User.builder().id(1l).fullname("Fulano").email("fulano@email.com").cpf("54737491004").build();
@@ -92,7 +96,7 @@ public class UserControllerTest {
     @DisplayName("Deve retornar um erro BAD REQUEST ao tentar cadastrar um novo usuário.")
     public void createUserInvalidCPFTest() throws Exception {
         // Cenário
-        UserDTO userDTO = UserDTO.builder().fullname("Fulano").email("fulano@email.com").cpf("12345678900").build();
+        UserDTO userDTO = createAnUserDTO();
         String json = new ObjectMapper().writeValueAsString(userDTO);
 
         // Execução
@@ -179,9 +183,11 @@ public class UserControllerTest {
     public void updateUserTest() throws Exception {
         // Cenário
         Long id = 1l;
+        UserDTO dto = createAnUserDTO();
+        String json = new ObjectMapper().writeValueAsString( dto );
+
         User updatingUser = User.builder().id(1l).fullname("Fulano").email("fulano@email.com").cpf("54737491004").build();
         User updatedUser = User.builder().id(1l).fullname("Fulano alterado").email("fulanoalterado@email.com").cpf("54737491004").build();
-        String json = new ObjectMapper().writeValueAsString( updatedUser );
         BDDMockito.given( this.userService.getUserById(id) ).willReturn( Optional.of(updatingUser) );
         BDDMockito.given( this.userService.update(updatingUser) ).willReturn(updatedUser);
         // Execuções
@@ -219,6 +225,36 @@ public class UserControllerTest {
             .perform(request)
             .andExpect( status().isNotFound() )
         ;
+    }
+
+    @Test
+    @DisplayName("Deve listar dados de todos os usuários de acordo com os parâmetros informados.")
+    public void getByParamsTest() throws Exception {
+        // Cenário
+        User user = User.builder().fullname("Fulano").email("fulano@email.com").cpf("54737491004").build();
+        String parameters = String.format("?fullname=%s&email=%s&cpf=%s&page=0&size=20", user.getFullname(), user.getEmail(), user.getCpf());
+        List<User> list = Arrays.asList( user );
+        BDDMockito.given( userService.find( Mockito.any(User.class), Mockito.any(Pageable.class) )  )
+                .willReturn( new PageImpl<User>( list, PageRequest.of(0, 20), 1 ) );
+
+        // Execução
+        MockHttpServletRequestBuilder request = MockMvcRequestBuilders
+                .get(USER_API.concat(parameters))
+                .accept(MediaType.APPLICATION_JSON);
+
+        // Verificações
+        mvc.perform(request)
+                .andExpect( status().isOk() )
+                .andExpect( jsonPath("data.content", hasSize(1)) )
+                .andExpect( jsonPath("data.totalElements").value(1) )
+                .andExpect( jsonPath("data.pageable.pageSize").value(20) )
+                .andExpect( jsonPath("data.pageable.pageNumber").value(0) )
+        ;
+
+    }
+
+    public UserDTO createAnUserDTO() {
+        return UserDTO.builder().fullname("Fulano").email("fulano@email.com").cpf("54737491004").build();
     }
 
 }

@@ -11,9 +11,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.*;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -187,6 +190,24 @@ public class UserServiceTest {
         org.junit.jupiter.api.Assertions.assertThrows(BusinessException.class, () -> this.userService.update( user ));
         // Verificações
         Mockito.verify( this.userRepository, Mockito.never() ).save( user );
+    }
+
+    @Test
+    @DisplayName("Deve ser feita uma pesquisa paginada.")
+    public void getUsersByParams() {
+        // Cenário
+        User user = User.builder().id(1l).fullname("Fulano").email("email@email.com").cpf("12345678900").build();
+        PageRequest pageRequest = PageRequest.of(0, 20);
+        List<User> list = Arrays.asList(user);
+        Page<User> page = new PageImpl<User>(list, pageRequest, 1 );
+        Mockito.when( this.userRepository.findAll( Mockito.any(Example.class), Mockito.any(Pageable.class) ) ).thenReturn( page );
+        // Execução
+        Page<User> result = this.userService.find( user, pageRequest );
+        // Verificações
+        assertThat( result.getTotalElements() ).isEqualTo(1);
+        assertThat( result.getContent() ).isEqualTo( list );
+        assertThat( result.getPageable().getPageSize() ).isEqualTo(20);
+        assertThat( result.getPageable().getPageNumber() ).isEqualTo(0);
     }
 
 }

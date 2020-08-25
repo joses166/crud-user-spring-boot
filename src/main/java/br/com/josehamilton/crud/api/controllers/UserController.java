@@ -9,11 +9,17 @@ import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
@@ -116,6 +122,28 @@ public class UserController {
             response.getErrors().add( ex.getMessage() );
             return ResponseEntity.badRequest().body(response);
         }
+    }
+
+    @GetMapping
+    @ApiOperation("Find users by parameters.")
+    public ResponseEntity<Response<Page<UserDTO>>> getUsersByParam(UserDTO dto, Pageable pageRequest) {
+        // Log informado o que o método executa
+        log.info("Na rota utilizada será feito um método GET passando os parâmetros de pesquisa para filtrar usuários.");
+        // Variável instanciada de resposta
+        Response<Page<UserDTO>> response = new Response<>();
+        // Mapeando dados recebidos para a classe User
+        User filter = this.modelMapper.map( dto, User.class );
+        // Recebendo Page da pesquisa feita no BD
+        Page<User> result = this.userService.find( filter, pageRequest );
+        // Mapeando lista de dados User para UserDTO
+        List<UserDTO> list = result
+                .getContent()
+                .stream()
+                .map( entity -> this.modelMapper.map(entity, UserDTO.class) )
+                .collect(Collectors.toList());
+        // Retornando para usuário a lista paginada
+        response.setData(new PageImpl<UserDTO>( list, pageRequest, result.getTotalElements() ));
+        return ResponseEntity.ok().body(response);
     }
 
 }
